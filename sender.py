@@ -45,12 +45,12 @@ class Sender:
             totalTime = int.from_bytes(results[Sender.HELP_DATA_SIZE // 2:], byteorder='little')
 
             self.packetsLost = self.packetsToSend - receivedPackets
-            self.speed = self.packetsToSend * self.packetSize * 8 // totalTime
+            self.speed = receivedPackets * self.packetSize * 8 // totalTime * 10**6 // 1024**2
         finally:
             self.helpSocket.close()
 
     def printResults(self):
         self.writeLog('результаты получены:')
         print("\tотправлено {} пакетов, потеряно {}".format(self.packetsToSend, self.packetsLost))
-        print("\tпотеряно {}%".format(self.packetsLost / self.packetsToSend))
-        print("\tскорость {} кбит/с".format(self.speed))
+        print("\tпотеряно {}%".format(self.packetsLost / self.packetsToSend * 100))
+        print("\tскорость {} мбит/с".format(self.speed))
