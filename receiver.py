@@ -38,8 +38,10 @@ class Receiver:
             while True:
                 self.measureSocket.recv(Receiver.BUFFER_SIZE)
                 self.receivedPacketsCount += 1
+                print("\r\t{} получено".format(self.receivedPacketsCount), end='')
                 self.endTime = datetime.now()
         except socket.timeout:
+            print("")
             self.writeLog("проверка завершена")
 
         self.measureSocket.close()
