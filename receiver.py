@@ -5,9 +5,9 @@ from time import ctime
 class Receiver:
     PORT = 55555
     LOCAL_IP = ""
-    BUFFER_SIZE = 512
+    BUFFER_SIZE = 4096
     HELP_DATA_SIZE = 16
-    TIMEOUT = 10.0
+    TIMEOUT = 5.0
 
     def __init__(self):
         self.measureSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -36,22 +36,24 @@ class Receiver:
             self.measureSocket.settimeout(Receiver.TIMEOUT)
 
             while True:
-                self.measureSocket.recv()
+                self.measureSocket.recv(Receiver.BUFFER_SIZE)
                 self.receivedPacketsCount += 1
                 self.endTime = datetime.now()
-        except TimeoutError:
+        except socket.timeout:
             self.writeLog("проверка завершена")
-            self.totalTime = self.endTime - self.startTime
+            self.sendResults()
         finally:
             self.measureSocket.close()
 
     def sendResults(self):
         self.writeLog("отправка результатов")
+        self.totalTime = self.endTime - self.startTime
         try:
+            self.helpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.helpSocket.bind((Receiver.LOCAL_IP, Receiver.PORT))
             self.helpSocket.connect(self.clientInfo)
 
-            results = bytes(Receiver.HELP_DATA_SIZE)
+            results = bytearray(Receiver.HELP_DATA_SIZE)
 
             results[:Receiver.HELP_DATA_SIZE // 2] = self.receivedPacketsCount.to_bytes(Receiver.HELP_DATA_SIZE // 2,
                                                                                         byteorder='little')
