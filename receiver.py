@@ -41,23 +41,23 @@ class Receiver:
                 self.endTime = datetime.now()
         except socket.timeout:
             self.writeLog("проверка завершена")
-            self.sendResults()
-        finally:
-            self.measureSocket.close()
+
+        self.measureSocket.close()
+        self.sendResults()
 
     def sendResults(self):
         self.writeLog("отправка результатов")
         self.totalTime = self.endTime - self.startTime
+        self.totalTime = self.totalTime.seconds * 10**6 + self.totalTime.microseconds
         try:
-            self.helpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.helpSocket.bind((Receiver.LOCAL_IP, Receiver.PORT))
+            self.helpSocket.bind((Receiver.LOCAL_IP, 0))
             self.helpSocket.connect(self.clientInfo)
 
             results = bytearray(Receiver.HELP_DATA_SIZE)
 
             results[:Receiver.HELP_DATA_SIZE // 2] = self.receivedPacketsCount.to_bytes(Receiver.HELP_DATA_SIZE // 2,
                                                                                         byteorder='little')
-            results[Receiver.HELP_DATA_SIZE // 2:] = self.totalTime.seconds.to_bytes(Receiver.HELP_DATA_SIZE // 2,
+            results[Receiver.HELP_DATA_SIZE // 2:] = self.totalTime.to_bytes(Receiver.HELP_DATA_SIZE // 2,
                                                                                      byteorder='little')
 
             self.helpSocket.send(results)
