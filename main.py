@@ -1,27 +1,28 @@
 import sys
 from enum import Enum
-
+from sender import Sender
+from receiver import Receiver
 
 class Mode(Enum):
     wait = 0
     connect = 1
+    help = 2
 
 
 def parseArgs(args):
     if len(args) < 2:
-        return -1
+        return Mode.help
 
     if args[1].lower() == '-w':
         return Mode.wait,
 
     if args[1].lower() == '-c':
         if len(args) != 5:
-            return -1
+            return Mode.help
         try:
-            return Mode.connect, (args[2], args[3], args[4])
+            return Mode.connect, {"ip": args[2], "packet_size": int(args[3]), "packets_count": int(args[4])}
         except ValueError:
-            return -1
-
+            return Mode.help
 
 
 def fatalError(errorMsg):
@@ -32,17 +33,27 @@ def fatalError(errorMsg):
 def printHelp():
     print("""
             -w - ожидание сеанса измерения скорости
-            -с - подключ
+            -с [ip] [packet size] [packets count] - измерение скорости с ip, отправка packet count пакетов
+            по packet size байт каждый
           """)
 
 
 if __name__ == "__main__":
-    argsInfo = parseArgs(sys.argv)
-
-    if argsInfo == -1:
-        fatalError("Некорректные параметры параметров!")
-
-    if argsInfo[0] == Mode.wait:
-        pass
+    if len(sys.argv) == 1:
+        printHelp()
     else:
-        pass
+        argsInfo = parseArgs(sys.argv)
+
+        if argsInfo == Mode.help:
+            printHelp()
+
+        try:
+            if argsInfo[0] == Mode.wait:
+                receiver = Receiver()
+                receiver.start()
+            else:
+                sender = Sender(destIP=argsInfo[1]["ip"], packetSize=argsInfo[1]["packet_size"],
+                                packetsCount=argsInfo[1]["packet_count"])
+                sender.measure()
+        except Exception as e:
+            fatalError(e)

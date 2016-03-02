@@ -1,31 +1,56 @@
 import socket
 from _datetime import datetime
 
+
 class Receiver:
     PORT = 55555
     LOCAL_IP = ""
+    BUFFER_SIZE = 512
+    HELP_DATA_SIZE = 16
+    TIMEOUT = 10.0
 
     def __init__(self):
-        self.udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udpSocket.bind((Receiver.IP, Receiver.PORT))
+        self.measureSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.helpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        #self.
+        self.startTime = None
+        self.endTime = None
+        self.clientInfo = None
+        self.totalTime = 0
 
-    def recevive(self):
-        print("Ождание начала измерения...")
-
-        data, address = self.udpSocket.recvfrom(Receiver.BUFFER_SIZE)
-
-        self.startTime = datetime.now()
-        self.senderInfo = data, address
-        self.udpSocket.settimeout(5.0)
         self.receivedPacketsCount = 0
 
+    def start(self):
         try:
-            data, address = self.udpSocket.recvfrom(Receiver.BUFFER_SIZE)
-            while True:
-                self.receivedPacketsCount += 1
-        except TimeoutError:
+            self.measureSocket.bind((Receiver.IP, Receiver.PORT))
 
+            data, self.clientInfo = self.measureSocket.recvfrom()
+            self.receivedPacketsCount += 1
+            self.startTime = datetime.now()
+
+            self.measureSocket.settimeout(Receiver.TIMEOUT)
+
+            while True:
+                self.measureSocket.recv()
+                self.receivedPacketsCount += 1
+                self.endTime = datetime.now()
+        except TimeoutError:
+            self.totalTime = self.endTime - self.startTime
         finally:
-            self.udpSocket.close()
+            self.measureSocket.close()
+
+    def sendResults(self):
+        try:
+            self.helpSocket.bind((Receiver.IP, Receiver.PORT))
+            self.helpSocket.connect(self.clientInfo)
+
+            results = bytes(Receiver.HELP_DATA_SIZE)
+
+            results[:Receiver.HELP_DATA_SIZE // 2] = self.receivedPacketsCount.to_bytes(Receiver.HELP_DATA_SIZE // 2,
+                                                                                        byteorder='little')
+            results[Receiver.HELP_DATA_SIZE // 2:] = self.totalTime.seconds.to_bytes(Receiver.HELP_DATA_SIZE // 2,
+                                                                                     byteorder='little')
+
+            self.helpSocket.send(results)
+        finally:
+            self.helpSocket.close()
