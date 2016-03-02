@@ -28,8 +28,10 @@ class Sender:
         try:
             for i in range(self.packetsToSend):
                 self.measureSocket.sendto(packet, (self.destIP, Sender.PORT))
+                print("\r\t{}/{} отправлено".format(i+1, self.packetsToSend), end='')
         finally:
             self.measureSocket.close()
+            print("")
         self.getResults()
         self.printResults()
 
