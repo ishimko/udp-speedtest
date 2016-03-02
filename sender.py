@@ -45,7 +45,7 @@ class Sender:
             totalTime = int.from_bytes(results[Sender.HELP_DATA_SIZE // 2:], byteorder='little')
 
             self.packetsLost = self.packetsToSend - receivedPackets
-            self.speed = receivedPackets * self.packetSize * 8 // totalTime * 10**6 // 1024**2
+            self.speed = self.packetsToSend * self.packetSize * 8 // totalTime * 10**6 // 1024**2
         finally:
             self.helpSocket.close()
 
