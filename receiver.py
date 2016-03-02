@@ -41,16 +41,15 @@ class Receiver:
                 self.endTime = datetime.now()
         except socket.timeout:
             self.writeLog("проверка завершена")
-            self.sendResults()
-        finally:
-            self.measureSocket.close()
+
+        self.measureSocket.close()
+        self.sendResults()
 
     def sendResults(self):
         self.writeLog("отправка результатов")
         self.totalTime = self.endTime - self.startTime
         try:
-            self.helpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.helpSocket.bind((Receiver.LOCAL_IP, Receiver.PORT))
+            self.helpSocket.bind((Receiver.LOCAL_IP, 0))
             self.helpSocket.connect(self.clientInfo)
 
             results = bytearray(Receiver.HELP_DATA_SIZE)
