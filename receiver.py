@@ -4,7 +4,7 @@ from time import ctime
 
 class Receiver:
     PORT = 55555
-    LOCAL_IP = ""
+    LOCAL_IP = "127.0.0.1"
     BUFFER_SIZE = 512
     HELP_DATA_SIZE = 16
     TIMEOUT = 10.0

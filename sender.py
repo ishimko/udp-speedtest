@@ -7,14 +7,13 @@ class Sender:
     BUFFER_SIZE = 512
     HELP_DATA_SIZE = 16
 
-    def __init__(self, destIP, packetSize, packetsCount):
+    def __init__(self, destIP, packetSize, packetsToSend):
         self.destIP = destIP
         self.packetSize = packetSize
-        self.packetsSend = packetsCount
+        self.packetsToSend = packetsToSend
         self.packetsLost = None
 
         self.measureSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #self.measureSocket.setsockopt()
 
         self.helpSocket = socket.socket(socket.AF_INET, socket.SOL_SOCKET)
 
@@ -24,30 +23,34 @@ class Sender:
     def measure(self):
         self.writeLog("проверка запущена")
 
-        packet = bytes(Sender.PACKET_SIZE)
-        for i in range(Sender.PACKET_COUNT):
-            try:
-                self.measureSocket.send(packet, (self.destIP, Sender.PORT))
-            finally:
-                self.measureSocket.close()
+        self.measureSocket.bind((Sender.LOCAL_IP, Sender.PORT))
+        packet = bytes(self.packetSize)
+        try:
+            for i in range(self.packetsToSend):
+                self.measureSocket.sendto(packet, (self.destIP, Sender.PORT))
+        finally:
+            self.measureSocket.close()
         self.getResults()
 
     def getResults(self):
         self.writeLog("ожидание результатов")
         try:
+            self.helpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.helpSocket.bind((Sender.LOCAL_IP, Sender.PORT))
-            connection = self.helpSocket.accept()
+            self.helpSocket.listen(1)
+
+            connection, address = self.helpSocket.accept()
             results = connection.recv(Sender.BUFFER_SIZE)
             receivedPackets = int.from_bytes(results[:Sender.HELP_DATA_SIZE // 2], byteorder='little')
             totalTime = int.from_bytes(results[Sender.HELP_DATA_SIZE // 2:], byteorder='little')
 
-            self.packetsLost = self.packetsSend - receivedPackets
-            self.speed = self.packetsSend * self.packetSize * 8 // totalTime
+            self.packetsLost = self.packetsToSend - receivedPackets
+            self.speed = self.packetsToSend * self.packetSize * 8 // totalTime
         finally:
             self.helpSocket.close()
 
     def printResults(self):
         self.writeLog('результаты получены:')
-        print("\tотправлено {} пакетов, потеряно {}".format(self.packetsSend, self.packetsLost))
-        print("\tпотеряно {}%".format(self.packetsLost / self.packetsSend))
+        print("\tотправлено {} пакетов, потеряно {}".format(self.packetsToSend, self.packetsLost))
+        print("\tпотеряно {}%".format(self.packetsLost / self.packetsToSend))
         print("\tскорость {} кбит/с".format(self.speed))
