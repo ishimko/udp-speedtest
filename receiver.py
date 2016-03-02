@@ -1,6 +1,6 @@
 import socket
 from _datetime import datetime
-
+from time import ctime
 
 class Receiver:
     PORT = 55555
@@ -20,13 +20,18 @@ class Receiver:
 
         self.receivedPacketsCount = 0
 
-    def start(self):
-        try:
-            self.measureSocket.bind((Receiver.IP, Receiver.PORT))
+    def writeLog(self, msg):
+        print("{}: {}".format(ctime(), msg))
 
-            data, self.clientInfo = self.measureSocket.recvfrom()
+    def start(self):
+        self.writeLog("ожидание подключения")
+        try:
+            self.measureSocket.bind((Receiver.LOCAL_IP, Receiver.PORT))
+
+            data, self.clientInfo = self.measureSocket.recvfrom(Receiver.BUFFER_SIZE)
             self.receivedPacketsCount += 1
             self.startTime = datetime.now()
+            self.writeLog("проверка запущена")
 
             self.measureSocket.settimeout(Receiver.TIMEOUT)
 
@@ -35,13 +40,15 @@ class Receiver:
                 self.receivedPacketsCount += 1
                 self.endTime = datetime.now()
         except TimeoutError:
+            self.writeLog("проверка завершена")
             self.totalTime = self.endTime - self.startTime
         finally:
             self.measureSocket.close()
 
     def sendResults(self):
+        self.writeLog("отправка результатов")
         try:
-            self.helpSocket.bind((Receiver.IP, Receiver.PORT))
+            self.helpSocket.bind((Receiver.LOCAL_IP, Receiver.PORT))
             self.helpSocket.connect(self.clientInfo)
 
             results = bytes(Receiver.HELP_DATA_SIZE)

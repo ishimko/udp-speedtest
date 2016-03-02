@@ -1,5 +1,5 @@
 import socket
-
+from time import ctime
 
 class Sender:
     PORT = 55555
@@ -18,8 +18,12 @@ class Sender:
 
         self.helpSocket = socket.socket(socket.AF_INET, socket.SOL_SOCKET)
 
+    def writeLog(self, msg):
+        print("{}: {}".format(ctime(), msg))
+
     def measure(self):
-        print("Проверка запущена")
+        self.writeLog("проверка запущена")
+
         packet = bytes(Sender.PACKET_SIZE)
         for i in range(Sender.PACKET_COUNT):
             try:
@@ -29,7 +33,7 @@ class Sender:
         self.getResults()
 
     def getResults(self):
-        print("Получение результатов")
+        self.writeLog("ожидание результатов")
         try:
             self.helpSocket.bind((Sender.LOCAL_IP, Sender.PORT))
             connection = self.helpSocket.accept()
@@ -43,6 +47,7 @@ class Sender:
             self.helpSocket.close()
 
     def printResults(self):
-        print("Отправлено {} пакетов, потеряно {}".format(self.packetsSend, self.packetsLost))
-        print("Потеряно {}%".format(self.packetsLost / self.packetsSend))
-        print("Скорость {} кбит/с".format(self.speed))
+        self.writeLog('результаты получены:')
+        print("\tотправлено {} пакетов, потеряно {}".format(self.packetsSend, self.packetsLost))
+        print("\tпотеряно {}%".format(self.packetsLost / self.packetsSend))
+        print("\tскорость {} кбит/с".format(self.speed))
