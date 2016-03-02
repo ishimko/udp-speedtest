@@ -12,4 +12,14 @@ class Sender:
         self.udpSocket.bind((Sender.LOCAL_IP, Sender.PORT))
 
     def measure(self):
-        pass
+        packet = bytes(Sender.PACKET_SIZE)
+        for i in range(Sender.PACKET_COUNT):
+            try:
+                self.udpSocket.send(packet, (self.destIP, Sender.PORT))
+            finally:
+                self.udpSocket.close()
+
+    def printResults(self):
+        print("Отправлено {} пакетов, потеряно {}".format())
+        print("Потеряно {}".format())
+        print("Скорость {} кбит/с".format())
