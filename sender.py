@@ -31,11 +31,11 @@ class Sender:
         finally:
             self.measureSocket.close()
         self.getResults()
+        self.printResults()
 
     def getResults(self):
         self.writeLog("ожидание результатов")
         try:
-            self.helpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.helpSocket.bind((Sender.LOCAL_IP, Sender.PORT))
             self.helpSocket.listen(1)
 
