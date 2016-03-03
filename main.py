@@ -48,11 +48,14 @@ if __name__ == "__main__":
 
         if argsInfo == Mode.help:
             printHelp()
+        try:
+            if argsInfo[0] == Mode.wait:
+                receiver = Receiver()
+                receiver.start()
+            else:
+                sender = Sender(destIP=argsInfo[1]["ip"], packetSize=argsInfo[1]["packet_size"],
+                                packetsToSend=argsInfo[1]["packets_count"])
+                sender.measure()
+        except Exception as e:
+            fatalError(e)
 
-        if argsInfo[0] == Mode.wait:
-            receiver = Receiver()
-            receiver.start()
-        else:
-            sender = Sender(destIP=argsInfo[1]["ip"], packetSize=argsInfo[1]["packet_size"],
-                            packetsToSend=argsInfo[1]["packets_count"])
-            sender.measure()
